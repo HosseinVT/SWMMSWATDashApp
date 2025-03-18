@@ -1,0 +1,39 @@
+#PCSWMM project file
+#Please do not edit
+[General]
+PCSWMM.NET Version=7.6.3675
+SWMM5 Version=5.2.4
+Version=3
+Package Path=C:\Users\hosseinahmadi\Desktop\Web User Interface\SWMMSWAT+APP\LID-Model.pcz
+Map EPSG=102746
+CS Name=NAD 1983 StatePlane Virginia North FIPS 4501 Feet
+Last Report Date=03/18/2025 11:07:54 AM
+[2D]
+2DModeling=False
+[Project Summary]
+Compute Time=2 seconds
+Routing Error=n/a
+Runoff Error=n/a
+Run Incomplete=False
+[Authors]
+Author0=David Sample,45734.4637780324
+[Layers]
+layer0=Subcatchments
+layer1=Outlets
+layer2=Weirs
+layer3=Orifices
+layer4=Pumps
+layer5=Conduits
+layer6=Storages
+layer7=Dividers
+layer8=Outfalls
+layer9=Junctions
+[Scenarios]
+"Scenarios0"="C:\Users\hosseinahmadi\Desktop\Web User Interface\SWMMSWAT+APP\LID-Model.inp",False,False,LID-Model
+[Graph]
+Plotting Position=Gringorten
+[Erosion]
+ErosionOn=False
+Use C TS=False
+Calculate LS=False
+Use TSS=False

@@ -1,0 +1,3 @@
+Skipping hmd import. File does not exist: C:\Users\hosseinahmadi\OneDrive - Virginia Tech\Research\DSS\Modeling\SWAT BMPs\1 day SWAT\1 Day\Scenarios\Default\TxtInOut\rh.txt
+Skipping slr import. File does not exist: C:\Users\hosseinahmadi\OneDrive - Virginia Tech\Research\DSS\Modeling\SWAT BMPs\1 day SWAT\1 Day\Scenarios\Default\TxtInOut\solar.txt
+Skipping wnd import. File does not exist: C:\Users\hosseinahmadi\OneDrive - Virginia Tech\Research\DSS\Modeling\SWAT BMPs\1 day SWAT\1 Day\Scenarios\Default\TxtInOut\wind.txt

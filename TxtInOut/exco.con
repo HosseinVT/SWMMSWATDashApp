@@ -1,0 +1,3 @@
+exco.con: written by SWAT+ editor v2.3.3 on 2025-03-05 17:01 for SWAT+ rev.60.5.7
+      id  name                gis_id          area           lat           lon          elev      exco               wst       cst      ovfl      rule   out_tot       obj_typ    obj_id       hyd_typ          frac  
+       1  pt042                   42       0.00001      37.22363     -80.43022     612.98364         1     s37206n80447w         0         0         0         1           sdc        20           tot       1.00000  

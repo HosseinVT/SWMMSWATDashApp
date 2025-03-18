@@ -1,0 +1,15 @@
+weather-sta.cli: written by SWAT+ editor v2.3.3 on 2025-03-05 17:01 for SWAT+ rev.60.5.7
+name                           wgn                        pcp                        tmp                        slr                        hmd                        wnd           wnd_dir          atmo_dep  
+s36999n80000w             370n800w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s36999n80312w             370n803w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s36999n80625w             370n806w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s36999n80938w             370n809w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37206n80447w             373n803w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37311n80000w             373n800w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37311n80312w             373n803w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37311n80625w             373n806w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37311n80938w             373n809w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37624n80000w             376n800w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37624n80312w             376n803w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37624n80625w             376n806w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
+s37624n80938w             376n809w                 strpcp.pcp                 strtmp.tmp                        sim                        sim                        sim              null              null  
