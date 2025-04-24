@@ -454,7 +454,14 @@ def save_inp(contents, filename):
         file_path = os.path.join("uploads", filename)
         with open(file_path, "wb") as f:
             f.write(decoded)
-        return f"File {filename} uploaded. Path: {file_path}", file_path
+        # List the current contents of the "uploads" directory
+        current_files = os.listdir("uploads")
+        directory_listing = ", ".join(current_files)
+        message = (
+            f"File '{filename}' uploaded. Saved at: {file_path}. "
+            f"Current files in 'uploads': {directory_listing}"
+        )
+        return message, file_path
     return "No file uploaded yet.", ""
 
 # 5B. Subcatchment Data Extraction Callback with Plotly Graph
