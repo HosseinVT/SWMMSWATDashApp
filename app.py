@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
+
+
+# Urban + Rural
+
+
+# In[3]:
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, dash_table
@@ -13,6 +21,9 @@ import pandas as pd
 import subprocess
 import os
 from io import StringIO
+
+# Flask server instance
+server = Flask(__name__)
 
 ###############################################################################
 # 1. HELPER FUNCTIONS
@@ -1062,4 +1073,6 @@ def calculate_total_cost(n_clicks, lid_cost, pond_cost):
 ###############################################################################
 if __name__ == "__main__":
     app.run_server(debug=True, port=8055)
+
+server = app.server
 
