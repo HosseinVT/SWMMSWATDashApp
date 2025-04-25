@@ -538,6 +538,10 @@ def extract_subcatchments_data(n_clicks, file_path):
     State("stored-file-path", "data")
 )
 def run_simulation(n_clicks, file_path):
+    uploads, filename = os.path.split(file_path)
+    cwd = os.getcwd()
+    os.chdir(uploads)
+    
     if n_clicks and file_path:
         try:
 
@@ -562,40 +566,66 @@ def run_simulation(n_clicks, file_path):
                 "predict": predict
             }
 
-            # 5) Calculate the peak (for display & storing)
-            peak_flow_orig = max(predict) if predict else None
+           # 5C. SWMM Simulation Runner Callback (Original Simulation)
+@app.callback(
+    [
+        Output("sim-status", "children"),
+        Output("stored-original-series", "data"),
+        Output("stored-original-peak-flow", "data"),
+    ],
+    Input("run-sim-btn", "n_clicks"),
+    State("stored-file-path", "data")
+)
+def run_simulation(n_clicks, file_path):
+    if not (n_clicks and file_path):
+        return "", None, None
 
-            # 6) Build the original‐only line plot
-            fig = px.line(
-                x=times, y=predict,
-                labels={"x":"Time","y":"Streamflow (cfs)"},
-                title="Original OF1 Inflow"
-            )
-            fig.update_layout(
-                plot_bgcolor="white", paper_bgcolor="white",
-                xaxis=dict(title_font=dict(size=22),
-                           showgrid=True, gridwidth=1, gridcolor="lightgrey"),
-                yaxis=dict(title_font=dict(size=22),
-                           showgrid=True, gridwidth=1, gridcolor="lightgrey")
-            )
+    # ─── BEGIN directory‐wrap fix ─────────────────────────────────────────────
+    uploads_dir, inp_filename = os.path.split(file_path)
+    original_cwd = os.getcwd()
+    os.chdir(uploads_dir)
 
-            # 7) Return UI + store both the series and the peak
-            ui = html.Div([
-                html.P(f"Simulation completed: {os.path.basename(file_path)}"),
-                html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs"),
-                dcc.Graph(figure=fig)
-            ])
-            return ui, series_data, peak_flow_orig
+    try:
+        # 1) Run the SWMM simulation in uploads_dir
+        with Simulation(inp_filename) as sim:
+            sim.execute()
 
-        except Exception as e:
-            return f"Error during simulation: {e}", None, None
+        # 2) Build the .out name and read it back
+        out_filename = inp_filename.replace(".inp", ".out")
+        with pyswmm.Output(out_filename) as out:
+            node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
+    finally:
+        # restore whatever cwd was before
+        os.chdir(original_cwd)
+    # ─── END directory‐wrap fix ──────────────────────────────────────────────
 
-    # clicked but no file
-    elif n_clicks:
-        return "No file uploaded to simulate.", None, None
+    # 3) Build time‐ordered lists
+    times   = sorted(node_total_inflow.keys())
+    predict = [node_total_inflow[t] for t in times]
 
-    # before any clicks
-    return "", None, None
+    # 4) Prepare payload & peak
+    series_data   = {"times": [t.isoformat() for t in times], "predict": predict}
+    peak_flow_orig = max(predict) if predict else None
+
+    # 5) Plot
+    fig = px.line(
+        x=times, y=predict,
+        labels={"x":"Time","y":"Streamflow (cfs)"},
+        title="Original OF1 Inflow"
+    )
+    fig.update_layout(
+        plot_bgcolor="white", paper_bgcolor="white",
+        xaxis=dict(showgrid=True, gridcolor="lightgrey"),
+        yaxis=dict(showgrid=True, gridcolor="lightgrey")
+    )
+
+    # 6) Return UI + store
+    ui = html.Div([
+        html.P(f"Simulation completed: {inp_filename}"),
+        html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs") if peak_flow_orig is not None else None,
+        dcc.Graph(figure=fig)
+    ])
+    return ui, series_data, peak_flow_orig
 
 
 
