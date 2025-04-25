@@ -154,6 +154,7 @@ soupsieve==2.4.1
 spotpy==1.6.2
 stack-data==0.6.2
 statsmodels==0.14.3
+swmm.toolkit==0.14.2
 terminado==0.17.1
 threadpoolctl==3.2.0
 tinycss2==1.2.1
