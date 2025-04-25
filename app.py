@@ -14,7 +14,7 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, dash_table
 from flask import Flask
 from pyswmm import Simulation, Nodes , Links
-from pyswmm import Output as SWMMOutput
+
 from swmm.toolkit.shared_enum import SubcatchAttribute, NodeAttribute, LinkAttribute
 import plotly.express as px
 import plotly.graph_objs as go
@@ -554,7 +554,7 @@ def run_simulation(n_clicks, inp_path):
         out_path = os.path.splitext(inp_path)[0] + ".out"
 
         # 3) Read TOTAL_INFLOW at OF1 from that out file
-        with SWMMOutput(out_path) as out:
+        with pyswmm.Output(out_path) as out:
             ts = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
 
     except Exception as e:
