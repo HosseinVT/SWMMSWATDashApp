@@ -23,6 +23,9 @@ import subprocess
 import os
 from io import StringIO
 
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+
 # Flask server instance
 server = Flask(__name__)
 
@@ -476,8 +479,8 @@ def save_inp(contents, filename):
     if contents is not None:
         content_type, content_string = contents.split(",")
         decoded = base64.b64decode(content_string)
-        os.makedirs("uploads", exist_ok=True)
-        file_path = os.path.join("uploads", filename)
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        file_path = os.path.join(UPLOAD_DIR, filename)
         with open(file_path, "wb") as f:
             f.write(decoded)
         return f"File {filename} uploaded. Path: {file_path}", file_path
