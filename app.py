@@ -538,76 +538,43 @@ def extract_subcatchments_data(n_clicks, file_path):
     State("stored-file-path", "data")
 )
 def run_simulation(n_clicks, file_path):
-    uploads, filename = os.path.split(file_path)
-    cwd = os.getcwd()
-    os.chdir(uploads)
-    
-    if n_clicks and file_path:
-        try:
-
-            # 1) Run the SWMM sim
-            with Simulation(file_path) as sim:
-                sim.execute()
-
-            # 2) Figure out the .out file path
-            out_file = os.path.splitext(file_path)[0] + ".out"
-
-            # 3) Open the output and grab TOTAL_INFLOW for OF1
-            with pyswmm.Output(out_file) as out:
-                node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
-
-            # 4) Build time-ordered lists
-            times   = sorted(node_total_inflow.keys())
-            predict = [node_total_inflow[t] for t in times]
-
-            # 4.5) Prepare the store payload
-            series_data = {
-                "times":   [t.isoformat() for t in times],
-                "predict": predict
-            }
-
-           # 5C. SWMM Simulation Runner Callback (Original Simulation)
-@app.callback(
-    [
-        Output("sim-status", "children"),
-        Output("stored-original-series", "data"),
-        Output("stored-original-peak-flow", "data"),
-    ],
-    Input("run-sim-btn", "n_clicks"),
-    State("stored-file-path", "data")
-)
-def run_simulation(n_clicks, file_path):
     if not (n_clicks and file_path):
         return "", None, None
 
-    # ─── BEGIN directory‐wrap fix ─────────────────────────────────────────────
+    # split off the uploads folder + filename
     uploads_dir, inp_filename = os.path.split(file_path)
     original_cwd = os.getcwd()
-    os.chdir(uploads_dir)
 
     try:
-        # 1) Run the SWMM simulation in uploads_dir
+        # cd into uploads
+        os.chdir(uploads_dir)
+
+        # 1) run SWMM
         with Simulation(inp_filename) as sim:
             sim.execute()
 
-        # 2) Build the .out name and read it back
+        # 2) read the generated .out
         out_filename = inp_filename.replace(".inp", ".out")
         with pyswmm.Output(out_filename) as out:
             node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
-    finally:
-        # restore whatever cwd was before
-        os.chdir(original_cwd)
-    # ─── END directory‐wrap fix ──────────────────────────────────────────────
 
-    # 3) Build time‐ordered lists
+    except Exception as e:
+        # return the error message and bail
+        return f"Error during simulation: {e}", None, None
+
+    finally:
+        # always go back home
+        os.chdir(original_cwd)
+
+    # 3) build time‐series
     times   = sorted(node_total_inflow.keys())
     predict = [node_total_inflow[t] for t in times]
 
-    # 4) Prepare payload & peak
-    series_data   = {"times": [t.isoformat() for t in times], "predict": predict}
+    # 4) store for later & compute peak
+    series_data    = {"times": [t.isoformat() for t in times], "predict": predict}
     peak_flow_orig = max(predict) if predict else None
 
-    # 5) Plot
+    # 5) plot
     fig = px.line(
         x=times, y=predict,
         labels={"x":"Time","y":"Streamflow (cfs)"},
@@ -619,12 +586,13 @@ def run_simulation(n_clicks, file_path):
         yaxis=dict(showgrid=True, gridcolor="lightgrey")
     )
 
-    # 6) Return UI + store
+    # 6) return UI + store
     ui = html.Div([
         html.P(f"Simulation completed: {inp_filename}"),
         html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs") if peak_flow_orig is not None else None,
         dcc.Graph(figure=fig)
     ])
+
     return ui, series_data, peak_flow_orig
 
 
