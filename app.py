@@ -14,7 +14,6 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, dash_table
 from flask import Flask
 from pyswmm import Simulation, Nodes , Links
-
 from swmm.toolkit.shared_enum import SubcatchAttribute, NodeAttribute, LinkAttribute
 import plotly.express as px
 import plotly.graph_objs as go
@@ -23,9 +22,6 @@ import pandas as pd
 import subprocess
 import os
 from io import StringIO
-
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
 # Flask server instance
 server = Flask(__name__)
@@ -480,8 +476,8 @@ def save_inp(contents, filename):
     if contents is not None:
         content_type, content_string = contents.split(",")
         decoded = base64.b64decode(content_string)
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        file_path = os.path.join(UPLOAD_DIR, filename)
+        os.makedirs("uploads", exist_ok=True)
+        file_path = os.path.join("uploads", filename)
         with open(file_path, "wb") as f:
             f.write(decoded)
         return f"File {filename} uploaded. Path: {file_path}", file_path
@@ -528,9 +524,6 @@ def extract_subcatchments_data(n_clicks, file_path):
             return info, "No subcatchment data found."
     return "", ""
 
-from pyswmm import Simulation, Output
-# … all your other imports …
-
 # 5C. SWMM Simulation Runner Callback (Original Simulation)
 @app.callback(
     [
@@ -539,56 +532,66 @@ from pyswmm import Simulation, Output
         Output("stored-original-peak-flow", "data"),
     ],
     Input("run-sim-btn", "n_clicks"),
-    State("stored-file-path", "data"),
+    State("stored-file-path", "data")
 )
-def run_simulation(n_clicks, inp_path):
-    if not (n_clicks and inp_path):
-        return "", None, None
+def run_simulation(n_clicks, file_path):
+    if n_clicks and file_path:
+        try:
+            # 1) Run the SWMM sim
+            with Simulation(file_path) as sim:
+                sim.execute()
 
-    try:
-        # 1) Run the SWMM sim directly on the full path
-        with Simulation(inp_path) as sim:
-            sim.execute()
+            # 2) Figure out the .out file path
+            out_file = os.path.splitext(file_path)[0] + ".out"
 
-        # 2) Build the absolute path to the .out
-        out_path = os.path.splitext(inp_path)[0] + ".out"
+            # 3) Open the output and grab TOTAL_INFLOW for OF1
+            with pyswmm.Output(out_file) as out:
+                node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
 
-        # 3) Read TOTAL_INFLOW at OF1 from that out file
-        with pyswmm.Output(out_path) as out:
-            ts = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
+            # 4) Build time-ordered lists
+            times   = sorted(node_total_inflow.keys())
+            predict = [node_total_inflow[t] for t in times]
 
-    except Exception as e:
-        return f"Error during simulation: {e}", None, None
+            # 4.5) Prepare the store payload
+            series_data = {
+                "times":   [t.isoformat() for t in times],
+                "predict": predict
+            }
 
-    # 4) Build time‐series lists
-    times   = sorted(ts.keys())
-    flows   = [ts[t] for t in times]
+            # 5) Calculate the peak (for display & storing)
+            peak_flow_orig = max(predict) if predict else None
 
-    # 5) Store them and compute peak
-    series_data    = {"times": [t.isoformat() for t in times], "predict": flows}
-    peak_flow_orig = max(flows) if flows else None
+            # 6) Build the original‐only line plot
+            fig = px.line(
+                x=times, y=predict,
+                labels={"x":"Time","y":"Streamflow (cfs)"},
+                title="Original OF1 Inflow"
+            )
+            fig.update_layout(
+                plot_bgcolor="white", paper_bgcolor="white",
+                xaxis=dict(title_font=dict(size=22),
+                           showgrid=True, gridwidth=1, gridcolor="lightgrey"),
+                yaxis=dict(title_font=dict(size=22),
+                           showgrid=True, gridwidth=1, gridcolor="lightgrey")
+            )
 
-    # 6) Plot the hydrograph
-    fig = px.line(
-        x=times, y=flows,
-        labels={"x": "Time", "y": "Streamflow (cfs)"},
-        title="Original OF1 Inflow"
-    )
-    fig.update_layout(
-        plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(showgrid=True, gridcolor="lightgrey"),
-        yaxis=dict(showgrid=True, gridcolor="lightgrey")
-    )
+            # 7) Return UI + store both the series and the peak
+            ui = html.Div([
+                html.P(f"Simulation completed: {os.path.basename(file_path)}"),
+                html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs"),
+                dcc.Graph(figure=fig)
+            ])
+            return ui, series_data, peak_flow_orig
 
-    # 7) Return the UI
-    ui = html.Div([
-        html.P(f"Simulation completed: {os.path.basename(inp_path)}"),
-        html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs") if peak_flow_orig is not None else html.P("No flow data"),
-        dcc.Graph(figure=fig)
-    ])
+        except Exception as e:
+            return f"Error during simulation: {e}", None, None
 
-    return ui, series_data, peak_flow_orig
+    # clicked but no file
+    elif n_clicks:
+        return "No file uploaded to simulate.", None, None
 
+    # before any clicks
+    return "", None, None
 
 
 
