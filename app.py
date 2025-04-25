@@ -527,6 +527,9 @@ def extract_subcatchments_data(n_clicks, file_path):
             return info, "No subcatchment data found."
     return "", ""
 
+from pyswmm import Simulation, Output
+# … all your other imports …
+
 # 5C. SWMM Simulation Runner Callback (Original Simulation)
 @app.callback(
     [
@@ -535,49 +538,39 @@ def extract_subcatchments_data(n_clicks, file_path):
         Output("stored-original-peak-flow", "data"),
     ],
     Input("run-sim-btn", "n_clicks"),
-    State("stored-file-path", "data")
+    State("stored-file-path", "data"),
 )
-def run_simulation(n_clicks, file_path):
-    if not (n_clicks and file_path):
+def run_simulation(n_clicks, inp_path):
+    if not (n_clicks and inp_path):
         return "", None, None
 
-    # split off the uploads folder + filename
-    uploads_dir, inp_filename = os.path.split(file_path)
-    original_cwd = os.getcwd()
-
     try:
-        # cd into uploads
-        os.chdir(uploads_dir)
-
-        # 1) run SWMM
-        with Simulation(inp_filename) as sim:
+        # 1) Run the SWMM sim directly on the full path
+        with Simulation(inp_path) as sim:
             sim.execute()
 
-        # 2) read the generated .out
-        out_filename = inp_filename.replace(".inp", ".out")
-        with pyswmm.Output(out_filename) as out:
-            node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
+        # 2) Build the absolute path to the .out
+        out_path = os.path.splitext(inp_path)[0] + ".out"
+
+        # 3) Read TOTAL_INFLOW at OF1 from that out file
+        with Output(out_path) as out:
+            ts = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
 
     except Exception as e:
-        # return the error message and bail
         return f"Error during simulation: {e}", None, None
 
-    finally:
-        # always go back home
-        os.chdir(original_cwd)
+    # 4) Build time‐series lists
+    times   = sorted(ts.keys())
+    flows   = [ts[t] for t in times]
 
-    # 3) build time‐series
-    times   = sorted(node_total_inflow.keys())
-    predict = [node_total_inflow[t] for t in times]
+    # 5) Store them and compute peak
+    series_data    = {"times": [t.isoformat() for t in times], "predict": flows}
+    peak_flow_orig = max(flows) if flows else None
 
-    # 4) store for later & compute peak
-    series_data    = {"times": [t.isoformat() for t in times], "predict": predict}
-    peak_flow_orig = max(predict) if predict else None
-
-    # 5) plot
+    # 6) Plot the hydrograph
     fig = px.line(
-        x=times, y=predict,
-        labels={"x":"Time","y":"Streamflow (cfs)"},
+        x=times, y=flows,
+        labels={"x": "Time", "y": "Streamflow (cfs)"},
         title="Original OF1 Inflow"
     )
     fig.update_layout(
@@ -586,14 +579,15 @@ def run_simulation(n_clicks, file_path):
         yaxis=dict(showgrid=True, gridcolor="lightgrey")
     )
 
-    # 6) return UI + store
+    # 7) Return the UI
     ui = html.Div([
-        html.P(f"Simulation completed: {inp_filename}"),
-        html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs") if peak_flow_orig is not None else None,
+        html.P(f"Simulation completed: {os.path.basename(inp_path)}"),
+        html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs") if peak_flow_orig is not None else html.P("No flow data"),
         dcc.Graph(figure=fig)
     ])
 
     return ui, series_data, peak_flow_orig
+
 
 
 
