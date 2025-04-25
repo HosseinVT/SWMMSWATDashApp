@@ -540,19 +540,13 @@ def extract_subcatchments_data(n_clicks, file_path):
 def run_simulation(n_clicks, file_path):
     if n_clicks and file_path:
         try:
-            
-            # split off the uploads dir and filename
-            cwd, inp_name = os.path.split(file_path)
-
-            # switch into that directory
-            os.chdir(cwd)
 
             # 1) Run the SWMM sim
             with Simulation(file_path) as sim:
                 sim.execute()
 
             # 2) Figure out the .out file path
-            out_file = os.path.join(cwd, os.path.splitext(inp_name)[0] + ".out")
+            out_file = os.path.splitext(file_path)[0] + ".out"
 
             # 3) Open the output and grab TOTAL_INFLOW for OF1
             with pyswmm.Output(out_file) as out:
