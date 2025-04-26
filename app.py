@@ -553,6 +553,13 @@ def run_simulation(n_clicks, file_path):
             with pyswmm.Output(out_file) as out:
                 node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
 
+            # 3.5) Render the raw data in the UI
+            raw_table = html.Pre(
+            "\n".join(f"{t.isoformat()}: {node_total_inflow[t]:.2f}" 
+              for t in sorted(node_total_inflow.keys())),
+                style={"whiteSpace": "pre-wrap", "fontSize": "12px"}
+            )
+
             # 4) Build time-ordered lists
             times   = sorted(node_total_inflow.keys())
             predict = [node_total_inflow[t] for t in times]
