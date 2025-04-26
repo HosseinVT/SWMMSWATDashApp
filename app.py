@@ -545,6 +545,10 @@ def run_simulation(n_clicks, file_path):
             # 2) Figure out the .out file path
             out_file = os.path.splitext(file_path)[0] + ".out"
 
+            if not os.path.exists(out_file):
+                raise FileNotFoundError(f"SWMM did not write {out_file}")
+
+
             # 3) Open the output and grab TOTAL_INFLOW for OF1
             with pyswmm.Output(out_file) as out:
                 node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
