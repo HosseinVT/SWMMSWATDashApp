@@ -538,72 +538,43 @@ def extract_subcatchments_data(n_clicks, file_path):
 def run_simulation(n_clicks, file_path):
     if n_clicks and file_path:
         try:
-            # 1) Run the SWMM sim
-            with Simulation(file_path) as sim:
+        # --- DEBUG START ---
+            debug = []
+            cwd = os.getcwd()
+            debug.append(f"CWD: {cwd}")
+            debug.append("Dir listing: " + ", ".join(os.listdir(cwd)))
+            abs_inp = os.path.abspath(file_path)
+            debug.append(f"INP path: {abs_inp} (exists={os.path.exists(abs_inp)})")
+        # end-of-debug
+
+        # RUN THE SIMULATION
+            with Simulation(abs_inp) as sim:
                 sim.execute()
 
-            # 2) Figure out the .out file path
-            out_file = os.path.splitext(file_path)[0] + ".out"
+            abs_out = os.path.splitext(abs_inp)[0] + ".out"
+            debug.append(f"OUT path: {abs_out} (exists={os.path.exists(abs_out)})")
 
-            if not os.path.exists(out_file):
-                raise FileNotFoundError(f"SWMM did not write {out_file}")
-
-
-            # 3) Open the output and grab TOTAL_INFLOW for OF1
-            with pyswmm.Output(out_file) as out:
+            with pyswmm.Output(abs_out) as out:
                 node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
 
-            # 3.5) Render the raw data in the UI
-            raw_table = html.Pre(
-            "\n".join(f"{t.isoformat()}: {node_total_inflow[t]:.2f}" 
-              for t in sorted(node_total_inflow.keys())),
-                style={"whiteSpace": "pre-wrap", "fontSize": "12px"}
-            )
-
-            # 4) Build time-ordered lists
-            times   = sorted(node_total_inflow.keys())
-            predict = [node_total_inflow[t] for t in times]
-
-            # 4.5) Prepare the store payload
-            series_data = {
-                "times":   [t.isoformat() for t in times],
-                "predict": predict
-            }
-
-            # 5) Calculate the peak (for display & storing)
-            peak_flow_orig = max(predict) if predict else None
-
-            # 6) Build the original‐only line plot
-            fig = px.line(
-                x=times, y=predict,
-                labels={"x":"Time","y":"Streamflow (cfs)"},
-                title="Original OF1 Inflow"
-            )
-            fig.update_layout(
-                plot_bgcolor="white", paper_bgcolor="white",
-                xaxis=dict(title_font=dict(size=22),
-                           showgrid=True, gridwidth=1, gridcolor="lightgrey"),
-                yaxis=dict(title_font=dict(size=22),
-                           showgrid=True, gridwidth=1, gridcolor="lightgrey")
-            )
-
-            # 7) Return UI + store both the series and the peak
-            ui = html.Div([
-                html.P(f"Simulation completed: {os.path.basename(file_path)}"),
+        # … same as before: build times, peak, fig …
+            actual_ui = html.Div([
+                html.P(f"Simulation completed: {os.path.basename(abs_inp)}"),
                 html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs"),
                 dcc.Graph(figure=fig)
             ])
-            return ui, series_data, peak_flow_orig
+
+        # wrap debug into a Pre tag so you can read it in the browser
+            debug_ui = html.Pre("\n".join(debug),
+                            style={"whiteSpace":"pre-wrap","color":"firebrick","fontSize":"12px"})
+
+        # combine debug + real UI
+            return html.Div([debug_ui, actual_ui]), series_data, peak_flow_orig
 
         except Exception as e:
-            return f"Error during simulation: {e}", None, None
-
-    # clicked but no file
-    elif n_clicks:
-        return "No file uploaded to simulate.", None, None
-
-    # before any clicks
-    return "", None, None
+        # show the full traceback if it still blows up
+            return html.Pre(traceback.format_exc(),
+                        style={"whiteSpace":"pre-wrap","color":"firebrick"}), None, None
 
 
 
