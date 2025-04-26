@@ -21,6 +21,7 @@ import plotly.graph_objs as go
 import base64
 import pandas as pd
 import subprocess
+import traceback
 import os
 from io import StringIO
 
@@ -527,56 +528,64 @@ def extract_subcatchments_data(n_clicks, file_path):
 
 # 5C. SWMM Simulation Runner Callback (Original Simulation)
 @app.callback(
-    [
-        Output("sim-status", "children"),
-        Output("stored-original-series", "data"),
-        Output("stored-original-peak-flow", "data"),
-    ],
+    Output("sim-status", "children"),
     Input("run-sim-btn", "n_clicks"),
     State("stored-file-path", "data")
 )
 def run_simulation(n_clicks, file_path):
-    if n_clicks and file_path:
-        try:
-        # --- DEBUG START ---
-            debug = []
-            cwd = os.getcwd()
-            debug.append(f"CWD: {cwd}")
-            debug.append("Dir listing: " + ", ".join(os.listdir(cwd)))
-            abs_inp = os.path.abspath(file_path)
-            debug.append(f"INP path: {abs_inp} (exists={os.path.exists(abs_inp)})")
-        # end-of-debug
+    # 1) Build debug info unconditionally
+    debug_lines = [
+        f"DEBUG → n_clicks: {n_clicks!r}",
+        f"DEBUG → stored-file-path: {file_path!r}",
+        f"DEBUG → CWD: {os.getcwd()}",
+        "DEBUG → Dir listing: " + ", ".join(os.listdir(os.getcwd()))
+    ]
+    debug_ui = html.Pre(
+        "\n".join(debug_lines),
+        style={"whiteSpace":"pre-wrap", "color":"firebrick", "fontSize":"12px"}
+    )
 
-        # RUN THE SIMULATION
-            with Simulation(abs_inp) as sim:
-                sim.execute()
+    # 2) If button never clicked, just show debug
+    if not n_clicks:
+        return debug_ui
 
-            abs_out = os.path.splitext(abs_inp)[0] + ".out"
-            debug.append(f"OUT path: {abs_out} (exists={os.path.exists(abs_out)})")
+    # 3) If no file_path, surface that too
+    if not file_path:
+        return html.Div([debug_ui, html.P("❌ No file uploaded yet. Please upload a SWMM .inp file above.")])
 
-            with pyswmm.Output(abs_out) as out:
-                node_total_inflow = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
+    # 4) Now try the simulation (with absolute paths)
+    try:
+        abs_inp = os.path.abspath(file_path)
+        debug_ui.children += ["\nDEBUG → abs_inp: " + abs_inp + f" (exists={os.path.exists(abs_inp)})"]
 
-        # … same as before: build times, peak, fig …
-            actual_ui = html.Div([
-                html.P(f"Simulation completed: {os.path.basename(abs_inp)}"),
-                html.P(f"Original Peak Streamflow: {peak_flow_orig:.2f} cfs"),
-                dcc.Graph(figure=fig)
-            ])
+        with Simulation(abs_inp) as sim:
+            sim.execute()
 
-        # wrap debug into a Pre tag so you can read it in the browser
-            debug_ui = html.Pre("\n".join(debug),
-                            style={"whiteSpace":"pre-wrap","color":"firebrick","fontSize":"12px"})
+        abs_out = os.path.splitext(abs_inp)[0] + ".out"
+        debug_ui.children += ["\nDEBUG → abs_out: " + abs_out + f" (exists={os.path.exists(abs_out)})"]
 
-        # combine debug + real UI
-            return html.Div([debug_ui, actual_ui]), series_data, peak_flow_orig
+        with pyswmm.Output(abs_out) as out:
+            series = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
 
-        except Exception as e:
-        # show the full traceback if it still blows up
-            return html.Pre(traceback.format_exc(),
-                        style={"whiteSpace":"pre-wrap","color":"firebrick"}), None, None
+        # Build your figure & peak
+        times   = sorted(series.keys())
+        predict = [series[t] for t in times]
+        peak_flow = max(predict) if predict else 0
+        fig = px.line(x=times, y=predict, title="Original OF1 Inflow",
+                      labels={"x":"Time","y":"Streamflow (cfs)"})
 
+        # 5) Combine debug + result
+        result_ui = html.Div([
+            html.P(f"Simulation completed: {os.path.basename(abs_inp)}"),
+            html.P(f"Original Peak Streamflow: {peak_flow:.2f} cfs"),
+            dcc.Graph(figure=fig)
+        ])
+        return html.Div([debug_ui, result_ui])
 
+    except Exception:
+        # Show full traceback if something blows up
+        tb = traceback.format_exc()
+        return html.Pre(tb, style={"whiteSpace":"pre-wrap", "color":"firebrick"})
 
 # 5D. LID Definition Submission Callback (Dynamic)
 from dash.dependencies import ALL
