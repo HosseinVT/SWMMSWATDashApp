@@ -620,7 +620,7 @@ def run_lid_simulation(n_clicks):
     original_peak = 662.93
 
     # 2) Apply 0.95 multiplier for LID effect
-    peak_flow = original_peak * 0.95
+    updated_peak = original_peak * 0.95
 
     # 3) Synthetic bell curve over 24 h (center at 12 h, σ=4 h)
     hours = np.linspace(0, 24, 200)
