@@ -542,7 +542,7 @@ def run_simulation(n_clicks):
     # 2) Build a bell curve over 24 hours:
     #    center at 12 h, sigma = 4 h chosen for reasonable spread
     hours = np.linspace(0, 24, 200)
-    sigma = 4
+    sigma = 6
     hydrograph = peak_flow * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
 
     # 3) Create a Plotly line plot
@@ -624,25 +624,38 @@ def run_lid_simulation(n_clicks):
 
     # 3) Synthetic bell curve over 24 h (center at 12 h, σ=4 h)
     hours = np.linspace(0, 24, 200)
-    sigma = 4
-    hydrograph = peak_flow * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
+    sigma = 6
+    hydro_orig = original_peak * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
+    hydro_upd  = updated_peak  * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
 
     # 4) Build the Plotly figure
-    fig = px.line(
-        x=hours,
-        y=hydrograph,
-        title="OF1 Inflow After LID (Synthetic Bell Curve)",
-        labels={"x": "Hour of Day", "y": "Streamflow (cfs)"}
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=hours, y=hydro_orig,
+        mode="lines", name="Original Peak (662.93 cfs)"
+    ))
+    fig.add_trace(go.Scatter(
+        x=hours, y=hydro_upd,
+        mode="lines", name="After LID (×0.95)",
+        line=dict(dash="dash")
+    ))
+    fig.update_layout(
+        title="OF1 Inflow: Original vs. After LID",
+        xaxis_title="Hour of Day",
+        yaxis_title="Streamflow (cfs)",
+        plot_bgcolor="white",
+        paper_bgcolor="white"
     )
 
-    # 5) Return a simple info line, the chart, and store the new peak for downstream use
-    info = "Synthetic LID Simulation (peak × 0.95)"
+    info = "Synthetic LID Simulation (original vs. ×0.95)"
     result_div = html.Div([
-        html.P(f"Updated Peak Streamflow: {peak_flow:.2f} cfs"),
+        html.P(f"Original Peak: {original_peak:.2f} cfs"),
+        html.P(f"Updated Peak:  {updated_peak: .2f} cfs"),
         dcc.Graph(figure=fig)
     ])
 
-    return info, result_div, peak_flow
+    # Store the updated peak for downstream callbacks
+    return info, result_div, updated_peak
 
 
 # 5F. Calculate LID Area Callback (Individual Calculations)
