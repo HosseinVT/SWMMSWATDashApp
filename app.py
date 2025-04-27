@@ -10,6 +10,7 @@
 # In[3]:
 
 import dash
+import numpy as np
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, dash_table
 from flask import Flask
