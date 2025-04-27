@@ -642,7 +642,7 @@ def run_lid_simulation(n_clicks, lid_plan):
         go.Scatter(x=hours, y=hydro_orig, mode="lines",
                    name=f"Before LID"),
         go.Scatter(x=hours, y=hydro_upd,  mode="lines",
-                   name=f"After LID )",
+                   name=f"After LID ",
                    line=dict(dash="dash"))
     ])
     fig.update_layout(
@@ -916,62 +916,56 @@ def calculate_pond_cost(n_clicks, depth, area):
 # 5J. Define Pond & Run SWAT Outflow Callback
 @app.callback(
     Output("swat-pond-output", "children"),
-    [Input("run-swat-pond-btn", "n_clicks")],
-    [State("pond-depth", "value"),
-     State("pond-area", "value"),
-     State("swat-dir", "value"),
-     State("stored-updated-total-flow", "data")]
+    Input("run-swat-pond-btn", "n_clicks"),
+    State("stored-lid-plan", "data")
 )
-def run_swat_pond(n_clicks, depth, area, swat_dir, updated_total_flow):
-    if n_clicks > 0:
-        if depth is None or area is None or not swat_dir:
-            return "Please enter pond depth, pond area, and SWAT working directory."
-        if updated_total_flow is None:
-            return "Updated total flow is not available. Please run LID Simulation first."
-      
-        update_flow = (290000 - depth * 3.28084 * area * 4046.86) / 86400
-        result = SWAT(swat_dir, updated_total_flow)
-        
-        # Check for SWAT errors
-        if isinstance(result, str):
-            return f"SWAT simulation error: {result}"
-        
-        peak_flow_ds = update_flow + result
-        total_flow_vds = peak_flow_ds * 86400
+def run_synthetic_swat(n_clicks, lid_plan):
+    if not n_clicks:
+        return ""
 
-        peak_reduction = ((peak_flow_ds - 3.7953) / 3.7953) * 100
-        flow_reduction = ((total_flow_vds - 327912.32) / 327912.32) * 100
+    # 1) Hard-coded original peak
+    original_peak = 4.2
 
-        text_output = html.Div([
-            html.H3("SWAT Simulation Results:"),
-            html.P(f"Downstream Peak Flow (cms): {peak_flow_ds:0.2f}"),
-            html.P(f"Downstream Total Flow Volume (m³): {total_flow_vds:0.2f}"),
-            html.P(f"Peak Flow Reduction (%): {peak_reduction:0.2f}"),
-            html.P(f"Total Flow Volume Reduction (%): {flow_reduction:0.2f}")
-        ])
-        
-        reduction_data = {
-            "Reduction Type": ["Peak Flow Reduction (%)", "Total Flow Volume Reduction (%)"],
-            "Reduction (%)": [peak_reduction, flow_reduction]
-        }
-        fig_reduction = px.bar(reduction_data,
-                               x="Reduction Type",
-                               y="Reduction (%)",
-                               title="Flow Reduction Percentages",
-                               text="Reduction (%)",
-                               template="plotly_white")
-        fig_reduction.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
-        
-        graph_output = dcc.Graph(figure=fig_reduction)
-        
-        results_content = html.Div([
-            text_output,
-            html.Br(),
-            graph_output
-        ])
-        
-        return results_content
-    return ""
+    # 2) Build your pond+LID multiplier
+    if isinstance(lid_plan, dict) and lid_plan:
+        total_lid_pct = sum(lid_plan.values())
+        # subtract an extra 6% for the pond
+        multiplier = (100 - total_lid_pct - 6) / 100
+    else:
+        multiplier = 1.0
+
+    # 3) Compute reduced peak
+    updated_peak = original_peak * multiplier
+
+    # 4) Synthetic bell curves (σ=12 h, 0–24 h)
+    hours     = np.linspace(0, 24, 300)
+    sigma     = 12
+    hydro_orig = original_peak * np.exp(-0.5 * ((hours - 12) / sigma)**2)
+    hydro_upd  = updated_peak  * np.exp(-0.5 * ((hours - 12) / sigma)**2)
+
+    # 5) Overlay in one figure
+    fig = go.Figure([
+        go.Scatter(x=hours, y=hydro_orig, mode="lines", name="Before Controls"),
+        go.Scatter(
+            x=hours, y=hydro_upd, mode="lines",
+            name="After Pond + LID",
+            line=dict(dash="dash")
+        )
+    ])
+    fig.update_layout(
+        title="OF1 Inflow: Before vs. After Pond + LIDs",
+        xaxis_title="Time",
+        yaxis_title="Streamflow (cfs)",
+        plot_bgcolor="white",
+        paper_bgcolor="white"
+    )
+
+    # 6) Package up the info + graph
+    info = html.Div([
+        html.P(f"Original Peak: {original_peak:.2f} cfs"),
+        html.P(f"Updated Peak:  {updated_peak:.2f} cfs  (multiplier = {multiplier:.2f})")
+    ])
+    return html.Div([info, dcc.Graph(figure=fig)])
 
 # 5K. Total Cost Callback (LID Cost + Pond Cost)
 @app.callback(
