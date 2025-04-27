@@ -963,7 +963,7 @@ def run_synthetic_swat(n_clicks, lid_plan):
     # 6) Package up the info + graph
     info = html.Div([
         html.P(f"Original Peak: {original_peak:.2f} cfs"),
-        html.P(f"Updated Peak:  {updated_peak:.2f} cfs  (multiplier = {multiplier:.2f})")
+        html.P(f"Updated Peak:  {updated_peak:.2f} cfs ")
     ])
     return html.Div([info, dcc.Graph(figure=fig)])
 
