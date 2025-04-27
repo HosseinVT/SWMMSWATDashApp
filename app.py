@@ -549,8 +549,8 @@ def run_simulation(n_clicks):
     fig = px.line(
         x=hours,
         y=hydrograph,
-        title="Original OF1 Inflow (Synthetic Bell Curve)",
-        labels={"x": "Hour of Day", "y": "Streamflow (cfs)"}
+        title="",
+        labels={"x": "Time", "y": "Streamflow (cfs)"}
     )
 
     # 4) Return the peak value and the graph
