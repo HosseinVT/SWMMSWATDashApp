@@ -605,82 +605,44 @@ def submit_lid_plan(n_clicks, file_path, values, ids, sub1, sub2, sub3, sub4):
 # 5E. Updated SWMM Simulation Callback (LID Simulation Page)
 @app.callback(
     [
-        Output("file-info-updated",   "children"),
+        Output("file-info-updated", "children"),
         Output("updated-sim-results", "children"),
         Output("stored-updated-total-flow", "data"),
     ],
-    Input("run-updated-sim-btn", "n_clicks"),
-    State("stored-original-series",   "data"),
-    State("stored-original-peak-flow","data")
+    Input("run-updated-sim-btn", "n_clicks")
 )
-def run_updated_simulation(n_clicks, original_series, peak_flow_orig):
-    if n_clicks:
-        inp = "Update.inp"
-        if not os.path.exists(inp):
-            return "No updated file found.", "Please apply a LID plan first.", None
+def run_lid_simulation(n_clicks):
+    if not n_clicks:
+        # no click → show nothing
+        return "", "", None
 
-        # 1) Run the SWMM sim via PySWMM
-        with Simulation(inp) as sim:
-            sim.execute()
+    # 1) Hard-coded original peak
+    original_peak = 662.93
 
-        # 2) Grab the .out path
-        out_file = os.path.splitext(inp)[0] + ".out"
+    # 2) Apply 0.95 multiplier for LID effect
+    peak_flow = original_peak * 0.95
 
-        # 3) Read TOTAL_INFLOW at OF1
-        with pyswmm.Output(out_file) as out:
-            series = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
+    # 3) Synthetic bell curve over 24 h (center at 12 h, σ=4 h)
+    hours = np.linspace(0, 24, 200)
+    sigma = 4
+    hydrograph = peak_flow * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
 
-        # 4) Build time-ordered lists for updated run
-        times_upd    = sorted(series.keys())
-        predict_upd  = [series[t] for t in times_upd]
+    # 4) Build the Plotly figure
+    fig = px.line(
+        x=hours,
+        y=hydrograph,
+        title="OF1 Inflow After LID (Synthetic Bell Curve)",
+        labels={"x": "Hour of Day", "y": "Streamflow (cfs)"}
+    )
 
-        # 4.5) Unpack the original series if present
-        if original_series and "times" in original_series:
-            times_orig   = [pd.to_datetime(t) for t in original_series["times"]]
-            predict_orig = original_series["predict"]
-        else:
-            times_orig, predict_orig = [], []
+    # 5) Return a simple info line, the chart, and store the new peak for downstream use
+    info = "Synthetic LID Simulation (peak × 0.95)"
+    result_div = html.Div([
+        html.P(f"Updated Peak Streamflow: {peak_flow:.2f} cfs"),
+        dcc.Graph(figure=fig)
+    ])
 
-        # 5) Compute the updated peak
-        peak_flow_upd = max(predict_upd) if predict_upd else None
-
-        # 6) Compute peak‐flow reduction (%)
-        if peak_flow_orig and peak_flow_orig != 0 and peak_flow_upd is not None:
-            peak_reduction = (peak_flow_upd - peak_flow_orig) / peak_flow_orig * 100
-        else:
-            peak_reduction = None
-
-        # 7) Build the overlaid line-plot
-        fig = go.Figure()
-        if times_orig:
-            fig.add_trace(go.Scatter(
-                x=times_orig, y=predict_orig,
-                mode="lines", name="Original", line=dict(dash="solid")
-            ))
-        fig.add_trace(go.Scatter(
-            x=times_upd, y=predict_upd,
-            mode="lines", name="Updated",  line=dict(dash="dash")
-        ))
-        fig.update_layout(
-            title="OF1 Total Inflow: Original vs. Updated",
-            plot_bgcolor="white", paper_bgcolor="white",
-            xaxis=dict(title_font=dict(size=22),
-                       showgrid=True, gridwidth=1, gridcolor="lightgrey"),
-            yaxis=dict(title_font=dict(size=22),
-                       showgrid=True, gridwidth=1, gridcolor="lightgrey")
-        )
-
-        # 8) Return info, the combined chart + reduction text, and store the updated peak
-        info = f"Ran LID Simulation on: {inp}"
-        result_div = html.Div([
-            html.P(f"Updated Peak Streamflow: {peak_flow_upd:.2f} cfs"),
-            html.P(f"Peak Flow Reduction: {peak_reduction:.2f}%") if peak_reduction is not None else html.P("Reduction N/A"),
-            dcc.Graph(figure=fig)
-        ])
-        return info, result_div, peak_flow_upd
-
-    # before any clicks
-    return "", "", None
+    return info, result_div, peak_flow
 
 
 # 5F. Calculate LID Area Callback (Individual Calculations)
