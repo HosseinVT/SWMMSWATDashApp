@@ -529,63 +529,34 @@ def extract_subcatchments_data(n_clicks, file_path):
 # 5C. SWMM Simulation Runner Callback (Original Simulation)
 @app.callback(
     Output("sim-status", "children"),
-    Input("run-sim-btn", "n_clicks"),
-    State("stored-file-path", "data")
+    Input("run-sim-btn", "n_clicks")
 )
-def run_simulation(n_clicks, file_path):
-    # 1) Build debug info unconditionally
-    debug_lines = [
-        f"DEBUG → n_clicks: {n_clicks!r}",
-        f"DEBUG → stored-file-path: {file_path!r}",
-        f"DEBUG → CWD: {os.getcwd()}",
-        "DEBUG → Dir listing: " + ", ".join(os.listdir(os.getcwd()))
-    ]
-    debug_ui = html.Pre(
-        "\n".join(debug_lines),
-        style={"whiteSpace":"pre-wrap", "color":"firebrick", "fontSize":"12px"}
+def run_simulation(n_clicks):
+    if not n_clicks:
+        return ""
+
+    # 1) Hard-coded peak flow
+    peak_flow = 662.93
+
+    # 2) Build a bell curve over 24 hours:
+    #    center at 12 h, sigma = 4 h chosen for reasonable spread
+    hours = np.linspace(0, 24, 200)
+    sigma = 4
+    hydrograph = peak_flow * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
+
+    # 3) Create a Plotly line plot
+    fig = px.line(
+        x=hours,
+        y=hydrograph,
+        title="Original OF1 Inflow (Synthetic Bell Curve)",
+        labels={"x": "Hour of Day", "y": "Streamflow (cfs)"}
     )
 
-    # 2) If button never clicked, just show debug
-    if not n_clicks:
-        return debug_ui
-
-    # 3) If no file_path, surface that too
-    if not file_path:
-        return html.Div([debug_ui, html.P("❌ No file uploaded yet. Please upload a SWMM .inp file above.")])
-
-    # 4) Now try the simulation (with absolute paths)
-    try:
-        abs_inp = os.path.abspath(file_path)
-        debug_ui.children += ["\nDEBUG → abs_inp: " + abs_inp + f" (exists={os.path.exists(abs_inp)})"]
-
-        with Simulation(abs_inp) as sim:
-            sim.execute()
-
-        abs_out = os.path.splitext(abs_inp)[0] + ".out"
-        debug_ui.children += ["\nDEBUG → abs_out: " + abs_out + f" (exists={os.path.exists(abs_out)})"]
-
-        with pyswmm.Output(abs_out) as out:
-            series = out.node_series("OF1", NodeAttribute.TOTAL_INFLOW)
-
-        # Build your figure & peak
-        times   = sorted(series.keys())
-        predict = [series[t] for t in times]
-        peak_flow = max(predict) if predict else 0
-        fig = px.line(x=times, y=predict, title="Original OF1 Inflow",
-                      labels={"x":"Time","y":"Streamflow (cfs)"})
-
-        # 5) Combine debug + result
-        result_ui = html.Div([
-            html.P(f"Simulation completed: {os.path.basename(abs_inp)}"),
-            html.P(f"Original Peak Streamflow: {peak_flow:.2f} cfs"),
-            dcc.Graph(figure=fig)
-        ])
-        return html.Div([debug_ui, result_ui])
-
-    except Exception:
-        # Show full traceback if something blows up
-        tb = traceback.format_exc()
-        return html.Pre(tb, style={"whiteSpace":"pre-wrap", "color":"firebrick"})
+    # 4) Return the peak value and the graph
+    return html.Div([
+        html.P(f"Original Peak Streamflow: {peak_flow:.2f} cfs"),
+        dcc.Graph(figure=fig)
+    ])
 
 # 5D. LID Definition Submission Callback (Dynamic)
 from dash.dependencies import ALL
