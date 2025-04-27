@@ -624,8 +624,9 @@ def run_lid_simulation(n_clicks, lid_plan):
     #    (falls back to 0.95 if plan is missing or empty)
     if isinstance(lid_plan, dict) and lid_plan:
         multiplier = sum(lid_plan.values())
+        multiplier = (100-multiplier)/100
     else:
-        multiplier = 0.95
+        multiplier = 1
 
     # 3) Compute the new (reduced) peak
     updated_peak = original_peak * multiplier
@@ -639,14 +640,14 @@ def run_lid_simulation(n_clicks, lid_plan):
     # 5) Overlay in one figure
     fig = go.Figure([
         go.Scatter(x=hours, y=hydro_orig, mode="lines",
-                   name=f"Original ({original_peak:.2f} cfs)"),
+                   name=f"Before LID"),
         go.Scatter(x=hours, y=hydro_upd,  mode="lines",
-                   name=f"After LID (×{multiplier:.2f})",
+                   name=f"After LID )",
                    line=dict(dash="dash"))
     ])
     fig.update_layout(
-        title="OF1 Inflow: Original vs. After LID",
-        xaxis_title="Hour of Day", yaxis_title="Streamflow (cfs)",
+        title="OF1 Inflow: Before  vs. After LID Controls",
+        xaxis_title="Time", yaxis_title="Streamflow (cfs)",
         plot_bgcolor="white", paper_bgcolor="white"
     )
 
