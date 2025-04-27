@@ -603,58 +603,61 @@ def submit_lid_plan(n_clicks, file_path, values, ids, sub1, sub2, sub3, sub4):
     return "", "", None
 
 # 5E. Updated SWMM Simulation Callback (LID Simulation Page)
+
 @app.callback(
     [
-        Output("file-info-updated", "children"),
+        Output("file-info-updated",   "children"),
         Output("updated-sim-results", "children"),
         Output("stored-updated-total-flow", "data"),
     ],
-    Input("run-updated-sim-btn", "n_clicks")
+    Input("run-updated-sim-btn", "n_clicks"),
+    State("stored-lid-plan", "data")
 )
-def run_lid_simulation(n_clicks):
+def run_lid_simulation(n_clicks, lid_plan):
     if not n_clicks:
-        # no click → show nothing
         return "", "", None
 
     # 1) Hard-coded original peak
     original_peak = 662.93
 
-    # 2) Apply 0.95 multiplier for LID effect
-    updated_peak = original_peak * 0.95
+    # 2) Sum your LID‐plan values to get the multiplier
+    #    (falls back to 0.95 if plan is missing or empty)
+    if isinstance(lid_plan, dict) and lid_plan:
+        multiplier = sum(lid_plan.values())
+    else:
+        multiplier = 0.95
 
-    # 3) Synthetic bell curve over 24 h (center at 12 h, σ=4 h)
-    hours = np.linspace(0, 24, 200)
-    sigma = 6
+    # 3) Compute the new (reduced) peak
+    updated_peak = original_peak * multiplier
+
+    # 4) Build both bell curves (σ=6h, centered at 12h)
+    hours     = np.linspace(0, 24, 200)
+    sigma     = 6
     hydro_orig = original_peak * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
     hydro_upd  = updated_peak  * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
 
-    # 4) Build the Plotly figure
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=hours, y=hydro_orig,
-        mode="lines", name="Original Peak (662.93 cfs)"
-    ))
-    fig.add_trace(go.Scatter(
-        x=hours, y=hydro_upd,
-        mode="lines", name="After LID Controls",
-        line=dict(dash="dash")
-    ))
+    # 5) Overlay in one figure
+    fig = go.Figure([
+        go.Scatter(x=hours, y=hydro_orig, mode="lines",
+                   name=f"Original ({original_peak:.2f} cfs)"),
+        go.Scatter(x=hours, y=hydro_upd,  mode="lines",
+                   name=f"After LID (×{multiplier:.2f})",
+                   line=dict(dash="dash"))
+    ])
     fig.update_layout(
-        title="Original vs. LID",
-        xaxis_title="Time",
-        yaxis_title="Streamflow (cfs)",
-        plot_bgcolor="white",
-        paper_bgcolor="white"
+        title="OF1 Inflow: Original vs. After LID",
+        xaxis_title="Hour of Day", yaxis_title="Streamflow (cfs)",
+        plot_bgcolor="white", paper_bgcolor="white"
     )
 
-    info = "Synthetic LID Simulation (original vs. ×0.95)"
+    # 6) Return header, the graph, and store updated_peak
+    info = f"Synthetic LID Simulation (multiplier = {multiplier:.2f})"
     result_div = html.Div([
         html.P(f"Original Peak: {original_peak:.2f} cfs"),
-        html.P(f"Updated Peak:  {updated_peak: .2f} cfs"),
+        html.P(f"Updated Peak:  {updated_peak:.2f} cfs"),
         dcc.Graph(figure=fig)
     ])
 
-    # Store the updated peak for downstream callbacks
     return info, result_div, updated_peak
 
 
