@@ -636,12 +636,12 @@ def run_lid_simulation(n_clicks):
     ))
     fig.add_trace(go.Scatter(
         x=hours, y=hydro_upd,
-        mode="lines", name="After LID (×0.95)",
+        mode="lines", name="After LID Controls",
         line=dict(dash="dash")
     ))
     fig.update_layout(
-        title="OF1 Inflow: Original vs. After LID",
-        xaxis_title="Hour of Day",
+        title="Original vs. LID",
+        xaxis_title="Time",
         yaxis_title="Streamflow (cfs)",
         plot_bgcolor="white",
         paper_bgcolor="white"
