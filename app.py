@@ -503,9 +503,17 @@ def extract_subcatchments_data(n_clicks, file_path):
         data = extract_subcatchments(file_bytes)
         if data:
             df = pd.DataFrame(data, columns=["Subcatchment", "Area", "%Imperv", "Width"])
+            df.rename(
+                columns={
+                    "Area": "Area (ac)",
+                    "%Imperv": "Imperviousness (%)",
+                    "Width": "Width (ft)"
+                },
+                inplace=True
+            )
             try:
-                df["Area"] = pd.to_numeric(df["Area"])
-                df["%Imperv"] = pd.to_numeric(df["%Imperv"])
+                df["Area (ac)"] = pd.to_numeric(df["Area (ac)"])
+                df["Imperviousness (%)] = pd.to_numeric(df["Imperviousness (%)"])
             except Exception:
                 pass
             table = dash_table.DataTable(
@@ -516,8 +524,8 @@ def extract_subcatchments_data(n_clicks, file_path):
                 style_cell={"textAlign": "left"}
             )
 
-            fig_area = px.pie(df, names="Subcatchment", values="Area", title="Subcatchment Areas (Acres)")
-            fig_imperv = px.treemap(df, path=["Subcatchment"], values="%Imperv", title="Subcatchment Imperviousness (%)")
+            fig_area = px.pie(df, names="Subcatchment", values="Area (ac)", title="Subcatchment Areas (Acres)")
+            fig_imperv = px.treemap(df, path=["Subcatchment"], values="Imperviousness (%)", title="Subcatchment Imperviousness (%)")
             content = html.Div([
                 dbc.Row([dbc.Col(table, width=10)], className="mb-4"),
                 dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=10),
