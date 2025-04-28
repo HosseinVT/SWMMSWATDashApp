@@ -502,9 +502,9 @@ def extract_subcatchments_data(n_clicks, file_path):
             file_bytes = f.read()
         data = extract_subcatchments(file_bytes)
         if data:
-            df = pd.DataFrame(data, columns=["Subcatchment", "Area", "%Imperv", "Width"])
+            df = pd.DataFrame(data, columns=["Subcatchment", "Area (ac)", "%Imperv", "Width"])
             try:
-                df["Area"] = pd.to_numeric(df["Area"])
+                df["Area (ac)"] = pd.to_numeric(df["Area (ac)"])
                 df["%Imperv"] = pd.to_numeric(df["%Imperv"])
             except Exception:
                 pass
@@ -519,8 +519,8 @@ def extract_subcatchments_data(n_clicks, file_path):
             fig_imperv = px.treemap(df, path=["Subcatchment"], values="%Imperv", title="Subcatchment Imperviousness (%)")
             content = html.Div([
                 dbc.Row([dbc.Col(table, width=10)], className="mb-4"),
-                dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=8),
-                         dbc.Col(dcc.Graph(figure=fig_imperv), width=8)])
+                dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=10),
+                         dbc.Col(dcc.Graph(figure=fig_imperv), width=10)])
             ])
             return info, content
         else:
