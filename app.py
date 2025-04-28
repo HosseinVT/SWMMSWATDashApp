@@ -780,14 +780,14 @@ def calculate_total_lid_area(n_clicks, file_path, plan):
         totals = []
         for lid, tot_area in total_by_lid.items():
             totals.append({
-                "LID Type": lid,
+                "LID Control": lid,
                 "Total LID Area (ft²)": tot_area
             })
         df = pd.DataFrame(totals)
         if not df.empty:
             fig = px.pie(
                 df,
-                names="LID Type",
+                names="LID Control",
                 values="Total LID Area (ft²)",
                 title="LID Area Distribution by Type",
                 hole=0.4,
