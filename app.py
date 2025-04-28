@@ -513,7 +513,7 @@ def extract_subcatchments_data(n_clicks, file_path):
             )
             try:
                 df["Area (ac)"] = pd.to_numeric(df["Area (ac)"])
-                df["Imperviousness (%)] = pd.to_numeric(df["Imperviousness (%)"])
+                df["Imperviousness (%)"] = pd.to_numeric(df["Imperviousness (%)"])
             except Exception:
                 pass
             table = dash_table.DataTable(
