@@ -958,7 +958,7 @@ def run_synthetic_swat(n_clicks, lid_plan):
         go.Scatter(x=hours, y=hydro_orig, mode="lines", name="Before Controls"),
         go.Scatter(
             x=hours, y=hydro_upd, mode="lines",
-            name="After Pond + LID",
+            name="After Pond + LIDs",
             line=dict(dash="dash")
         )
     ])
