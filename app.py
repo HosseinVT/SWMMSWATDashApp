@@ -555,7 +555,7 @@ def run_simulation(n_clicks):
 
     # 4) Return the peak value and the graph
     return html.Div([
-        html.P(f"Original Peak Streamflow: {peak_flow:.2f} cfs"),
+        html.P(f"Peak Streamflow: {peak_flow:.2f} cfs"),
         dcc.Graph(figure=fig)
     ])
 
@@ -646,10 +646,23 @@ def run_lid_simulation(n_clicks, lid_plan):
                    line=dict(dash="dash"))
     ])
     fig.update_layout(
-        title="OF1 Inflow: Before  vs. After LID Controls",
-        xaxis_title="Time", yaxis_title="Streamflow (cfs)",
-        plot_bgcolor="white", paper_bgcolor="white"
-    )
+    title="Impact of LID Controls",
+    xaxis=dict(
+        title="Time (hr)",
+        showgrid=True,
+        gridwidth=1,
+        gridcolor="lightgrey"
+    ),
+    yaxis=dict(
+        title="Streamflow (cfs)",
+        showgrid=True,
+        gridwidth=1,
+        gridcolor="lightgrey"
+    ),
+    plot_bgcolor="white",
+    paper_bgcolor="white"
+)
+
 
     # 6) Return header, the graph, and store updated_peak
     info = f"Synthetic LID Simulation (multiplier = {multiplier:.2f})"
