@@ -709,9 +709,9 @@ def calculate_lid_area(n_clicks, file_path, plan):
                 calc_area = defined_val / 100 * area * 43560
             results.append({
                 "Subcatchment": subc,
-                "LID Type": lid,
-                "Defined Value (%)": defined_val,
-                "Subcatchment Area (acres)": area if area is not None else "N/A",
+                "LID Control": lid,
+                "LID Area/Subcatchment Area (%)": defined_val,
+                "Subcatchment Area (Acres)": area if area is not None else "N/A",
                 "LID Area (ft²)": calc_area
             })
         df = pd.DataFrame(results)
