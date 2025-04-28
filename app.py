@@ -56,12 +56,12 @@ def extract_subcatchments(file_content):
 
 # Allowed LIDs for each subcatchment
 allowed_lids = {
-    21: ["BR", "IT", "RB", "GR", "PP", "VS"],
-    23: ["BR", "IT", "RB", "GR", "PP", "VS"],
-    18: ["BR", "IT", "RB", "GR", "PP", "VS"],
-    27: ["BR", "IT", "RB", "GR", "PP", "VS"]
+    21: ["BC", "IT", "RB", "GR", "PP", "VS"],
+    23: ["BC", "IT", "RB", "GR", "PP", "VS"],
+    18: ["BC", "IT", "RB", "GR", "PP", "VS"],
+    27: ["BC", "IT", "RB", "GR", "PP", "VS"]
 }
-all_lid_types = ["BR", "IT", "RB", "GR", "PP", "VS"]
+all_lid_types = ["BC", "IT", "RB", "GR", "PP", "VS"]
 
 def update_LID(new_values, inp_file_path=None):
     """Update the INP file with user-defined LID values, write to Update.inp."""
@@ -225,7 +225,7 @@ simulation_layout = dbc.Container([
 
 # Page D: Define LIDs for Subcatchment (Three Groups)
 lid_layout = dbc.Container([
-    html.H1("BR=Bioretention Cell, IT=Infiltration Trench, RB=Rain Barrel, GR=Green Roof, PP=Permeable Pavement, VS=Vegetated Swale", style={"fontSize": "16px"}),
+    html.H1("BC=Bioretention Cell, IT=Infiltration Trench, RB=Rain Barrel, GR=Green Roof, PP=Permeable Pavement, VS=Vegetated Swale", style={"fontSize": "16px"}),
     html.Div(id="file-info-lid"),
     dbc.Row([
         dbc.Col(
@@ -828,7 +828,7 @@ def calculate_lid_cost(n_clicks, file_path, plan):
         LocFactor = 0.907
         ENRCCI = 1.4208
         cost_formulas = {
-            "BR": lambda x: 1.5691 * x + 3696,
+            "BC": lambda x: 1.5691 * x + 3696,
             "IT": lambda x: 0.8473 * x + 3864,
             "PP": lambda x: 4.7209 * x + 1800,
             "RB": lambda x: 0.7697 * x + 3564,
