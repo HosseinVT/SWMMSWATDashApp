@@ -973,7 +973,7 @@ def run_synthetic_swat(n_clicks, lid_plan):
     # 6) Package up the info + graph
     info = html.Div([
         html.P(f"Without Controls, Streamflow Peak: {original_peak:.2f} cfs"),
-        html.P(f"With LID Controls + Pond & Pond, Streamflow Peak:  {updated_peak:.2f} cfs ")
+        html.P(f"With LID Controls & Pond, Streamflow Peak:  {updated_peak:.2f} cfs ")
     ])
     return html.Div([info, dcc.Graph(figure=fig)])
 
