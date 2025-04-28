@@ -504,8 +504,8 @@ def extract_subcatchments_data(n_clicks, file_path):
         if data:
             df = pd.DataFrame(data, columns=["Subcatchment", "Area (Ac)", "%Imperv (%)", "Width (ft)"])
             try:
-                df["Area"] = pd.to_numeric(df["Area"])
-                df["%Imperv"] = pd.to_numeric(df["%Imperv"])
+                df["Area (Ac)"] = pd.to_numeric(df["Area (Ac)"])
+                df["%Imperv (%)"] = pd.to_numeric(df["%Imperv (%)"])
             except Exception:
                 pass
             table = dash_table.DataTable(
@@ -516,11 +516,11 @@ def extract_subcatchments_data(n_clicks, file_path):
                 style_cell={"textAlign": "left"}
             )
             fig_area = px.pie(df, names="Subcatchment", values="Area", title="Subcatchment Areas (acres)")
-            fig_imperv = px.treemap(df, path=["Subcatchment"], values="%Imperv", title="Subcatchment Imperviousness (%)")
+            fig_imperv = px.treemap(df, path=["Subcatchment"], values="%Imperv (%)", title="Subcatchment Imperviousness (%)")
             content = html.Div([
                 dbc.Row([dbc.Col(table, width=10)], className="mb-4"),
-                dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=12),
-                         dbc.Col(dcc.Graph(figure=fig_imperv), width=12)])
+                dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=10),
+                         dbc.Col(dcc.Graph(figure=fig_imperv), width=10)])
             ])
             return info, content
         else:
