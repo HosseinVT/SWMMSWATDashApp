@@ -656,16 +656,16 @@ def run_lid_simulation(n_clicks, lid_plan):
                    line=dict(dash="dash"))
     ])
     fig.update_layout(
-        title="OF1 Inflow: Before  vs. After LID Controls",
+        title="Before  vs. After LID Controls",
         xaxis_title="Time", yaxis_title="Streamflow (cfs)",
         plot_bgcolor="white", paper_bgcolor="white"
     )
 
     # 6) Return header, the graph, and store updated_peak
-    info = f"Synthetic LID Simulation (multiplier = {multiplier:.2f})"
+    info = f""
     result_div = html.Div([
-        html.P(f"Original Peak: {original_peak:.2f} cfs"),
-        html.P(f"Updated Peak:  {updated_peak:.2f} cfs"),
+        html.P(f"Without LID,  Streamflow Peak: {original_peak:.2f} cfs"),
+        html.P(f"With LID,  Streamflow Peak:  {updated_peak:.2f} cfs"),
         dcc.Graph(figure=fig)
     ])
 
@@ -866,8 +866,8 @@ def calculate_lid_cost(n_clicks, file_path, plan):
                 cost = 0
             total_cost += cost
             cost_breakdown.append({
-                "LID Type": lid,
-                "Total LID Area (ft²)": area,
+                "LID Control": lid,
+                "Total LID Control Area (ft²)": area,
                 "Cost (pre-adjustment)": cost
             })
         total_cost = total_cost * LocFactor * ENRCCI
@@ -963,7 +963,7 @@ def run_synthetic_swat(n_clicks, lid_plan):
         )
     ])
     fig.update_layout(
-        title="OF1 Inflow: Before vs. After Pond + LIDs",
+        title="Before vs. After Pond + LIDs",
         xaxis_title="Time",
         yaxis_title="Streamflow (cfs)",
         plot_bgcolor="white",
@@ -972,8 +972,8 @@ def run_synthetic_swat(n_clicks, lid_plan):
 
     # 6) Package up the info + graph
     info = html.Div([
-        html.P(f"Original Peak: {original_peak:.2f} cfs"),
-        html.P(f"Updated Peak:  {updated_peak:.2f} cfs ")
+        html.P(f"Withoud LID Controls & Pond, Streamflow Peak: {original_peak:.2f} cfs"),
+        html.P(f"With LID Controls & Pond, Streamflow Peak:  {updated_peak:.2f} cfs ")
     ])
     return html.Div([info, dcc.Graph(figure=fig)])
 
@@ -1010,7 +1010,7 @@ def calculate_total_cost(n_clicks, lid_cost, pond_cost):
             html.H3("Total Cost Calculation:"),
             html.P(f"LID Cost: ${lid_cost:,.2f}"),
             html.P(f"Pond Cost: ${pond_cost:,.2f}"),
-            html.H3(f"Combined Total Cost: ${total_cost:,.2f}"),
+            html.H3(f"LID Controls + Pond Total Cost: ${total_cost:,.2f}"),
             dcc.Graph(figure=fig)
         ])
     return "Click the button to calculate total cost."
