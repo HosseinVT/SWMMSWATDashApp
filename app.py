@@ -720,7 +720,7 @@ def calculate_lid_area(n_clicks, file_path, plan):
                 df,
                 x="Subcatchment",
                 y="LID Area (ft²)",
-                color="LID Type",
+                color="LID Control",
                 barmode="stack",
                 title="LID Area by Subcatchment (Stacked)",
                 labels={"LID Area (ft²)": "LID Area (ft²)", "Subcatchment": "Subcatchment"},
