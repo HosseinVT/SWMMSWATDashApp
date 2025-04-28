@@ -550,8 +550,8 @@ def run_simulation(n_clicks):
 
     # 2) Build a bell curve over 24 hours:
     #    center at 12 h, sigma = 4 h chosen for reasonable spread
-    hours = np.linspace(0, 24, 200)
-    sigma = 6
+    hours = np.linspace(0, 24, 60)
+    sigma = 8
     hydrograph = peak_flow * np.exp(-0.5 * ((hours - 12) / sigma) ** 2)
 
     # 3) Create a Plotly line plot
@@ -559,12 +559,13 @@ def run_simulation(n_clicks):
         x=hours,
         y=hydrograph,
         title="",
-        labels={"x": "Time", "y": "Streamflow (cfs)"}
+        labels={"x": "Time", "y": "Streamflow (cfs)"},
+        template="plotly_white"
     )
 
     # 4) Return the peak value and the graph
     return html.Div([
-        html.P(f"Original Peak Streamflow: {peak_flow:.2f} cfs"),
+        html.P(f" Peak Streamflow: {peak_flow:.2f} cfs"),
         dcc.Graph(figure=fig)
     ])
 
