@@ -875,7 +875,7 @@ def calculate_lid_cost(n_clicks, file_path, plan):
         if not df_cost.empty:
             pie_fig = px.pie(
                 df_cost,
-                names="LID Type",
+                names="LID Control",
                 values="Cost (pre-adjustment)",
                 title="Cost Breakdown by LID Type",
                 hole=0.4,
