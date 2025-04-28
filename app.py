@@ -516,11 +516,11 @@ def extract_subcatchments_data(n_clicks, file_path):
                 style_cell={"textAlign": "left"}
             )
             fig_area = px.pie(df, names="Subcatchment", values="Area", title="Subcatchment Areas (acres)")
-            fig_imperv = px.treemap(df, path=["Subcatchment"], values="%Imperv", title="Subcatchment % Imperviousness")
+            fig_imperv = px.treemap(df, path=["Subcatchment"], values="%Imperv", title="Subcatchment Imperviousness (%)")
             content = html.Div([
-                dbc.Row([dbc.Col(table, width=12)], className="mb-4"),
-                dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=6),
-                         dbc.Col(dcc.Graph(figure=fig_imperv), width=6)])
+                dbc.Row([dbc.Col(table, width=10)], className="mb-4"),
+                dbc.Row([dbc.Col(dcc.Graph(figure=fig_area), width=8),
+                         dbc.Col(dcc.Graph(figure=fig_imperv), width=7)])
             ])
             return info, content
         else:
